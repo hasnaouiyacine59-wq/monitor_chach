@@ -67,7 +67,7 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
         <td>\${d.os||''}</td>
         <td>\${d.locale||''}</td>
         <td>\${d.timezone||''}</td>
-        <td>\${JSON.stringify(d.titles||'')}</td>
+        <td>\${(d.titles||[]).map(t => t.trim().split(' ')[0]).join(', ')}</td>
       \`;
       if (!existing) tbody.prepend(row);
       document.getElementById('count').textContent = tbody.querySelectorAll('tr').length;
