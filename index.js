@@ -61,12 +61,13 @@ app.get('/stream', async (req, res) => {
   rows.forEach(r => res.write(`data: ${JSON.stringify(r)}\n\n`));
 
   // Poll for changes every 3s
-  let known = new Set(rows.map(r => r.ip));
+  let known = new Map(rows.map(r => [r.ip, JSON.stringify(r)]));
   const interval = setInterval(async () => {
     try {
       const { rows: latest } = await pool.query('SELECT * FROM visits ORDER BY ip');
       latest.forEach(r => {
-        if (!known.has(r.ip)) { known.add(r.ip); res.write(`data: ${JSON.stringify(r)}\n\n`); }
+        const sig = JSON.stringify(r);
+        if (known.get(r.ip) !== sig) { known.set(r.ip, sig); res.write(`data: ${JSON.stringify(r)}\n\n`); }
       });
     } catch {}
   }, 3000);
