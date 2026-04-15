@@ -19,10 +19,10 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
   </style>
 </head>
 <body>
-  <h2>🟢 Live Visits</h2>
+  <h2>🟢 Live Visits — <span id="count">0</span> records</h2>
   <table>
     <thead><tr>
-      <th>IP</th><th>Country</th><th>City</th><th>OS</th><th>Locale</th><th>Timezone</th><th>Titles</th><th>Window</th>
+      <th>IP</th><th>Country</th><th>City</th><th>OS</th><th>Locale</th><th>Timezone</th><th>Titles</th>
     </tr></thead>
     <tbody id="log"></tbody>
   </table>
@@ -43,9 +43,9 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
         <td>\${d.locale||''}</td>
         <td>\${d.timezone||''}</td>
         <td>\${JSON.stringify(d.titles||'')}</td>
-        <td>\${JSON.stringify(d.window||'')}</td>
       \`;
       if (!existing) tbody.prepend(row);
+      document.getElementById('count').textContent = tbody.querySelectorAll('tr').length;
     };
   </script>
 </body>
