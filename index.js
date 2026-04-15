@@ -52,6 +52,7 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
   </table>
   <script>
     const es = new EventSource('/stream');
+    const flag = cc => cc ? String.fromCodePoint(...[...cc.toUpperCase()].map(c => 0x1F1E6 - 65 + c.charCodeAt(0))) : '';
     es.onmessage = e => {
       const d = JSON.parse(e.data);
       const tbody = document.getElementById('log');
@@ -61,7 +62,7 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
       row.className = 'new';
       row.innerHTML = \`
         <td>\${d.ip}</td>
-        <td>\${d.country||''} \${d.cc||''}</td>
+        <td>\${flag(d.cc)} \${d.country||''}</td>
         <td>\${d.city||''}</td>
         <td>\${d.os||''}</td>
         <td>\${d.locale||''}</td>
