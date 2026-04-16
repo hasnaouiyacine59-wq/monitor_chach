@@ -43,7 +43,7 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
   </style>
 </head>
 <body>
-  <h2>🟢 Live Visits — <span id="count">0</span> records</h2>
+  <h2><span id="led" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#444;margin-right:8px;transition:background 0.2s;box-shadow:none"></span>Live Visits — <span id="count">0</span> records</h2>
   <table>
     <thead><tr>
       <th>IP</th><th>Country</th><th>City</th><th>OS</th><th>Device ID</th><th>Locale</th><th>Timezone</th><th>Titles</th>
@@ -53,6 +53,22 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
   <script>
     const es = new EventSource('/stream');
     const flag = cc => cc ? String.fromCodePoint(...[...cc.toUpperCase()].map(c => 0x1F1E6 - 65 + c.charCodeAt(0))) : '';
+    const led = document.getElementById('led');
+    let blinkTimer, titleTimer;
+    const origTitle = 'Live Visits Log';
+    function flash() {
+      led.style.background = '#0f0';
+      led.style.boxShadow = '0 0 6px #0f0';
+      clearTimeout(blinkTimer);
+      blinkTimer = setTimeout(() => { led.style.background = '#444'; led.style.boxShadow = 'none'; }, 800);
+      let on = true, count = 0;
+      clearInterval(titleTimer);
+      titleTimer = setInterval(() => {
+        document.title = on ? '🟢 NEW VISIT!' : origTitle;
+        on = !on;
+        if (++count >= 6) { clearInterval(titleTimer); document.title = origTitle; }
+      }, 400);
+    }
     es.onmessage = e => {
       const d = JSON.parse(e.data);
       const tbody = document.getElementById('log');
@@ -70,7 +86,7 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
         <td>\${d.timezone||''}</td>
         <td>\${(d.titles||[]).map(t => t.trim().split(' ')[0]).join(', ')}</td>
       \`;
-      if (!existing) tbody.prepend(row);
+      if (!existing) { tbody.prepend(row); flash(); }
       document.getElementById('count').textContent = tbody.querySelectorAll('tr').length;
     };
   </script>
