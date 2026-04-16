@@ -8,6 +8,7 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
 <html>
 <head>
   <title>Live Visits Log</title>
+  <link id="favicon" rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><circle cx='5' cy='5' r='5' fill='%23444'/></svg>">
   <style>
     body {
       background:#0a0a0a;
@@ -56,6 +57,9 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
     const led = document.getElementById('led');
     let blinkTimer, titleTimer;
     const origTitle = 'Live Visits Log';
+    const favicon = document.getElementById('favicon');
+    const greenDot = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><circle cx='5' cy='5' r='5' fill='%2300ff00'/></svg>";
+    const greyDot  = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><circle cx='5' cy='5' r='5' fill='%23444'/></svg>";
     function flash() {
       led.style.background = '#0f0';
       led.style.boxShadow = '0 0 6px #0f0';
@@ -65,8 +69,9 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
       clearInterval(titleTimer);
       titleTimer = setInterval(() => {
         document.title = on ? '🟢 NEW VISIT!' : origTitle;
+        favicon.href = on ? greenDot : greyDot;
         on = !on;
-        if (++count >= 6) { clearInterval(titleTimer); document.title = origTitle; }
+        if (++count >= 6) { clearInterval(titleTimer); document.title = origTitle; favicon.href = greyDot; }
       }, 400);
     }
     es.onmessage = e => {
