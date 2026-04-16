@@ -46,7 +46,7 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
   <h2>🟢 Live Visits — <span id="count">0</span> records</h2>
   <table>
     <thead><tr>
-      <th>IP</th><th>Country</th><th>City</th><th>OS</th><th>Locale</th><th>Timezone</th><th>Titles</th>
+      <th>IP</th><th>Country</th><th>City</th><th>OS</th><th>Device ID</th><th>Locale</th><th>Timezone</th><th>Titles</th>
     </tr></thead>
     <tbody id="log"></tbody>
   </table>
@@ -65,6 +65,7 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
         <td>\${flag(d.cc)} \${d.country||''}</td>
         <td>\${d.city||''}</td>
         <td>\${d.os||''}</td>
+        <td>\${d.device_id||''}</td>
         <td>\${d.locale||''}</td>
         <td>\${d.timezone||''}</td>
         <td>\${(d.titles||[]).map(t => t.trim().split(' ')[0]).join(', ')}</td>
