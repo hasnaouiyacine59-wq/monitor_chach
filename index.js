@@ -4,7 +4,9 @@ const { Pool } = require('pg');
 const app = express();
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
-app.get('/', (req, res) => res.send(`<!DOCTYPE html>
+const { version } = require('./package.json');
+
+const html = `<!DOCTYPE html>
 <html>
 <head>
   <title>Live Visits Log</title>
@@ -45,7 +47,7 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
   </style>
 </head>
 <body>
-  <span id="version">v1.0.0</span>
+  <span id="version">v${version}</span>
   <h2><span id="led" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#444;margin-right:8px;transition:background 0.2s;box-shadow:none"></span>Live Visits — <span id="count">0</span> records</h2>
   <table>
     <thead><tr>
@@ -70,7 +72,7 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
       let on = true, count = 0;
       clearInterval(titleTimer);
       titleTimer = setInterval(() => {
-        document.title = on ? '🟢 NEW VISIT!' : origTitle;
+        document.title = on ? '\\u{1F7E2} NEW VISIT!' : origTitle;
         favicon.href = on ? greenDot : greyDot;
         on = !on;
         if (++count >= 6) { clearInterval(titleTimer); document.title = origTitle; favicon.href = greyDot; }
@@ -78,27 +80,23 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
     }
     function identicon(id) {
       if (!id) return '';
-      // Simple djb2 hash
       let h = 5381;
       for (let i = 0; i < id.length; i++) h = ((h << 5) + h) ^ id.charCodeAt(i);
       h = h >>> 0;
-      // Derive hue from hash, build 5x5 mirrored grid
       const hue = h % 360;
-      const color = `hsl(${hue},65%,55%)`;
-      const size = 5, cell = 6, pad = 1;
-      const total = size * cell + pad * 2;
+      const color = 'hsl(' + hue + ',65%,55%)';
+      const size = 5, cell = 6, pad = 1, total = size * cell + pad * 2;
       let rects = '';
       for (let row = 0; row < size; row++) {
         for (let col = 0; col < Math.ceil(size / 2); col++) {
-          const bit = (h >> (row * 3 + col)) & 1;
-          if (!bit) continue;
-          const mirrorCol = size - 1 - col;
-          const x1 = pad + col * cell, x2 = pad + mirrorCol * cell, y = pad + row * cell;
-          rects += `<rect x="${x1}" y="${y}" width="${cell}" height="${cell}" fill="${color}"/>`;
-          if (col !== mirrorCol) rects += `<rect x="${x2}" y="${y}" width="${cell}" height="${cell}" fill="${color}"/>`;
+          if (!((h >> (row * 3 + col)) & 1)) continue;
+          const mc = size - 1 - col;
+          const x1 = pad + col * cell, x2 = pad + mc * cell, y = pad + row * cell;
+          rects += '<rect x="' + x1 + '" y="' + y + '" width="' + cell + '" height="' + cell + '" fill="' + color + '"/>';
+          if (col !== mc) rects += '<rect x="' + x2 + '" y="' + y + '" width="' + cell + '" height="' + cell + '" fill="' + color + '"/>';
         }
       }
-      return `<svg xmlns="http://www.w3.org/2000/svg" width="${total}" height="${total}" style="display:block;border-radius:2px;background:#111">${rects}</svg>`;
+      return '<svg xmlns="http://www.w3.org/2000/svg" width="' + total + '" height="' + total + '" style="display:block;border-radius:2px;background:#111">' + rects + '</svg>';
     }
     es.onmessage = e => {
       const d = JSON.parse(e.data);
@@ -107,23 +105,24 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
       const row = existing || document.createElement('tr');
       row.id = 'row-' + d.ip;
       row.className = 'new';
-      row.innerHTML = \`
-        <td>\${d.ip}</td>
-        <td>\${flag(d.cc)} \${d.country||''}</td>
-        <td>\${d.city||''}</td>
-        <td>\${d.os||''}</td>
-        <td style="text-align:center">\${identicon(d.device_id)}</td>
-        <td>\${d.device_id||''}</td>
-        <td>\${d.locale||''}</td>
-        <td>\${d.timezone||''}</td>
-        <td>\${(d.titles||[]).map(t => t.trim().split(' ')[0]).join(', ')}</td>
-      \`;
+      row.innerHTML =
+        '<td>' + d.ip + '</td>' +
+        '<td>' + flag(d.cc) + ' ' + (d.country||'') + '</td>' +
+        '<td>' + (d.city||'') + '</td>' +
+        '<td>' + (d.os||'') + '</td>' +
+        '<td style="text-align:center">' + identicon(d.device_id) + '</td>' +
+        '<td>' + (d.device_id||'') + '</td>' +
+        '<td>' + (d.locale||'') + '</td>' +
+        '<td>' + (d.timezone||'') + '</td>' +
+        '<td>' + (d.titles||[]).map(t => t.trim().split(' ')[0]).join(', ') + '</td>';
       if (!existing) { tbody.prepend(row); flash(); }
       document.getElementById('count').textContent = tbody.querySelectorAll('tr').length;
     };
   </script>
 </body>
-</html>`));
+</html>`;
+
+app.get('/', (req, res) => res.send(html));
 
 // SSE stream
 app.get('/stream', async (req, res) => {
