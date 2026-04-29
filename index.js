@@ -35,6 +35,7 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
     }
     h2, table { position:relative; z-index:1; }
     h2 { text-shadow: 0 0 8px #0f0; letter-spacing:2px; }
+    #version { position:fixed; top:0.6rem; right:1rem; color:#444; font-size:0.7rem; z-index:10; }
     table { width:100%; border-collapse:collapse; font-size:0.8rem; }
     th { text-align:left; border-bottom:1px solid #333; padding:4px 8px; color:#888; }
     td { padding:4px 8px; border-bottom:1px solid #1a1a1a; vertical-align:top; }
@@ -44,10 +45,11 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
   </style>
 </head>
 <body>
+  <span id="version">v1.0.0</span>
   <h2><span id="led" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#444;margin-right:8px;transition:background 0.2s;box-shadow:none"></span>Live Visits — <span id="count">0</span> records</h2>
   <table>
     <thead><tr>
-      <th>IP</th><th>Country</th><th>City</th><th>OS</th><th>Device ID</th><th>Locale</th><th>Timezone</th><th>Titles</th>
+      <th>IP</th><th>Country</th><th>City</th><th>OS</th><th>Identicon</th><th>Device ID</th><th>Locale</th><th>Timezone</th><th>Titles</th>
     </tr></thead>
     <tbody id="log"></tbody>
   </table>
@@ -74,6 +76,30 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
         if (++count >= 6) { clearInterval(titleTimer); document.title = origTitle; favicon.href = greyDot; }
       }, 400);
     }
+    function identicon(id) {
+      if (!id) return '';
+      // Simple djb2 hash
+      let h = 5381;
+      for (let i = 0; i < id.length; i++) h = ((h << 5) + h) ^ id.charCodeAt(i);
+      h = h >>> 0;
+      // Derive hue from hash, build 5x5 mirrored grid
+      const hue = h % 360;
+      const color = `hsl(${hue},65%,55%)`;
+      const size = 5, cell = 6, pad = 1;
+      const total = size * cell + pad * 2;
+      let rects = '';
+      for (let row = 0; row < size; row++) {
+        for (let col = 0; col < Math.ceil(size / 2); col++) {
+          const bit = (h >> (row * 3 + col)) & 1;
+          if (!bit) continue;
+          const mirrorCol = size - 1 - col;
+          const x1 = pad + col * cell, x2 = pad + mirrorCol * cell, y = pad + row * cell;
+          rects += `<rect x="${x1}" y="${y}" width="${cell}" height="${cell}" fill="${color}"/>`;
+          if (col !== mirrorCol) rects += `<rect x="${x2}" y="${y}" width="${cell}" height="${cell}" fill="${color}"/>`;
+        }
+      }
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${total}" height="${total}" style="display:block;border-radius:2px;background:#111">${rects}</svg>`;
+    }
     es.onmessage = e => {
       const d = JSON.parse(e.data);
       const tbody = document.getElementById('log');
@@ -86,6 +112,7 @@ app.get('/', (req, res) => res.send(`<!DOCTYPE html>
         <td>\${flag(d.cc)} \${d.country||''}</td>
         <td>\${d.city||''}</td>
         <td>\${d.os||''}</td>
+        <td style="text-align:center">\${identicon(d.device_id)}</td>
         <td>\${d.device_id||''}</td>
         <td>\${d.locale||''}</td>
         <td>\${d.timezone||''}</td>
